@@ -43,6 +43,18 @@ int foo(void) {
 }
 ```
 
+and compile your code with the `INSTRUMENTPP_ACTIVE` compilation flag:
+
+```shell
+gcc ... -DINSTRUMENTPP_ACTIVE
+```
+
+or with `cmake` in your project:
+
+```shell
+cmake -B build cmake -DINSTRUMENTPP_ACTIVE=On
+```
+
 After running your code, if it reaches the place where `INSTRUMENT_DESTROY` is, you should see in `stdout` something like:
 
 ```shell
