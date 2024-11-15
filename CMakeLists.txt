@@ -14,3 +14,4 @@ target_include_directories(instrumentpp PUBLIC ${SRC_DIR})
 
 add_executable(example_1 examples/example_1.cpp)
 target_link_libraries(example_1 PRIVATE instrumentpp)
+target_compile_definitions(example_1 PRIVATE INSTRUMENTPP_ACTIVE)

@@ -22,19 +22,21 @@
 #ifndef INSTRUMENT_H
 #define INSTRUMENT_H
 
-// #ifndef TIMER
+#ifndef INSTRUMENTPP_ACTIVE
 
-// #define INSTRUMENTPP_CONSTRUCT
-// #define INSTRUMENTPP_DESTROY
-// #define INSTRUMENTPP_START
-// #define INSTRUMENTPP_CUSTOM(strname)
+#define INSTRUMENTPP_CONSTRUCT
+#define INSTRUMENTPP_DESTROY
+#define INSTRUMENTPP_START
+#define INSTRUMENTPP_CUSTOM(strname)
 
-// #else
+#else
 
 #define INSTRUMENTPP_CONSTRUCT Instrument::initialize();
 #define INSTRUMENTPP_DESTROY Instrument::finalize();
 #define INSTRUMENTPP_START Instrument __timer__(__FUNCTION__);
 #define INSTRUMENTPP_CUSTOM(strname) Instrument __custom__(strname);
+
+#endif
 
 #include <chrono>
 #include <cmath>
@@ -113,5 +115,4 @@ class Instrument {
   }
 };
 
-// #endif
 #endif

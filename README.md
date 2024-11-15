@@ -12,10 +12,11 @@ then in your `CMakeLists.txt` add it like:
 add_library(lib/instrumentpp)
 ```
 
-And link your code against it:
+Link your code against it and activate the instrumentation:
 
 ```cmake
-target_link_libraries(<your_target> <your_options> instrumentpp)
+target_link_libraries(<your_target> PRIVATE instrumentpp)
+target_compile_definitions(<your_target> PRIVATE INSTRUMENTPP_ACTIVE)
 ```
 
 In the `main` function of your code add the header and these 2 macros:
