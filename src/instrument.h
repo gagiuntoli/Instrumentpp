@@ -1,7 +1,4 @@
 /*
- * This source code is part of MicroPP: a finite element library
- * to solve microstructural problems for composite materials.
- *
  * Copyright (C) - 2018 - Jimmy Aguilar Mena <kratsbinovish@gmail.com>
  *                        Guido Giuntoli <gagiuntoli@gmail.com>
  *
@@ -18,9 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef INSTRUMENT_H
-#define INSTRUMENT_H
+#pragma once
 
 #ifndef INSTRUMENTPP_ACTIVE
 
@@ -29,14 +24,12 @@
 #define INSTRUMENTPP_START
 #define INSTRUMENTPP_CUSTOM(strname)
 
-#else
+#else // INSTRUMENTPP_ACTIVE
 
-#define INSTRUMENTPP_CONSTRUCT Instrument::initialize();
-#define INSTRUMENTPP_DESTROY Instrument::finalize();
-#define INSTRUMENTPP_START Instrument __timer__(__FUNCTION__);
-#define INSTRUMENTPP_CUSTOM(strname) Instrument __custom__(strname);
-
-#endif
+#define INSTRUMENTPP_CONSTRUCT Instrument<>::initialize();
+#define INSTRUMENTPP_DESTROY Instrument<>::finalize();
+#define INSTRUMENTPP_START Instrument<> __timer__(__FUNCTION__);
+#define INSTRUMENTPP_CUSTOM(strname) Instrument<> __custom__(strname);
 
 #include <chrono>
 #include <cmath>
@@ -49,70 +42,86 @@
 #include <iostream>
 #include <iomanip>
 
-typedef std::vector<uint64_t> timevect;
+namespace {
+	typedef std::vector<uint64_t> timevect;
+}
 
+template <int LIMIT=1<<30>
 class Instrument {
- private:
-  const uint64_t start_time_;
-  const std::string funct_;
+private:
 
-  static std::atomic<size_t> instances;
-  static uint64_t initialTime;
-  static std::unordered_map<std::string, timevect> times;
+	const uint64_t start_time_;
+	const std::string funct_;
 
-  static inline uint64_t take_time_stamp() {
-    return uint64_t(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-  }
+	static std::atomic<size_t> instances;
+	static uint64_t initialTime;
+	static std::unordered_map<std::string, timevect> times;
 
- public:
-  Instrument(const std::string funct) : funct_(funct), start_time_(take_time_stamp()) {}
+	static inline uint64_t take_time_stamp() {
+		return uint64_t(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+	}
 
-  ~Instrument() {
-    const uint64_t elapsed = (take_time_stamp() - start_time_) * 1E-3;
-    times[funct_].push_back(elapsed);
-  }
+public:
+	Instrument(const std::string funct)
+	: funct_(funct), start_time_(take_time_stamp())
+	{}
 
-  static void initialize() {
-    if (!instances++) initialTime = take_time_stamp();
-  }
+	~Instrument() {
+		const uint64_t elapsed = (take_time_stamp() - start_time_) * 1E-3;
+		times[funct_].push_back(elapsed);
+	}
 
-  static uint64_t devest(const std::vector<uint64_t> &in, const uint64_t mean) {
-    uint64_t out = 0;
-    for (const auto &x : in) {
-      const uint64_t tmp = (x - mean);
-      out += tmp * tmp;
-    }
+	static void initialize() {
+		if (!instances++)
+			initialTime = take_time_stamp();
+	}
 
-    return std::sqrt(out / in.size());
-  }
+	static uint64_t devest(const std::vector<uint64_t> &in, const uint64_t mean) {
+		uint64_t out = 0;
+		for (const auto &x : in) {
+			const uint64_t tmp = (x - mean);
+			out += tmp * tmp;
+		}
 
-  static void finalize() {
-    if (0 == --instances) {
-      const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
+		return std::sqrt(out / in.size());
+	}
 
-      size_t cont = 0;
-      std::cout << "# Final execution report: total time = " << elapsed << std::endl;
-      std::cout << std::setw(6) << std::left << "#No" << std::setw(25) << "function" << std::setw(8) << std::right
-                << "calls" << std::setw(16) << "total time" << std::setw(16) << "percent" << std::setw(16) << "mean"
-                << std::setw(16) << "stdev" << std::setw(16) << "relative" << std::endl;
+	static void finalize() {
+		if (0 == --instances) {
+			const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
 
-      std::cout.precision(2);
-      std::cout << std::fixed;
+			size_t cont = 0;
+			std::cout << "# Final execution report: total time = " << elapsed << std::endl;
+			std::cout << std::setw(6) << std::left << "#No" << std::setw(25) << "function" << std::setw(8) << std::right
+            << "calls" << std::setw(16) << "total time" << std::setw(16) << "percent" << std::setw(16) << "mean"
+            << std::setw(16) << "stdev" << std::setw(16) << "relative" << std::endl;
 
-      for (auto const &f : times) {
-        const uint64_t total = std::accumulate(f.second.begin(), f.second.end(), 0.0);
-        const size_t entries = f.second.size();
-        const uint64_t mean = total / entries;
-        const double percent = double(total) * 100 / elapsed;
-        const uint64_t stdev = Instrument::devest(f.second, mean);
-        const double relative = double(stdev) * 100 / mean;
+			std::cout.precision(2);
+			std::cout << std::fixed;
 
-        std::cout << std::setw(6) << std::left << cont++ << std::setw(25) << f.first << std::setw(8) << std::right
-                  << entries << std::setw(16) << total << std::setw(16) << percent << std::setw(16) << mean
-                  << std::setw(16) << stdev << std::setw(16) << relative << std::endl;
-      }
-    }
-  }
+			for (auto const &f : times) {
+				const uint64_t total = std::accumulate(f.second.begin(), f.second.end(), 0.0);
+				const size_t entries = f.second.size();
+				const uint64_t mean = total / entries;
+				const double percent = double(total) * 100 / elapsed;
+				const uint64_t stdev = Instrument::devest(f.second, mean);
+				const double relative = double(stdev) * 100 / mean;
+
+				std::cout << std::setw(6) << std::left << cont++ << std::setw(25) << f.first << std::setw(8) << std::right
+                << entries << std::setw(16) << total << std::setw(16) << percent << std::setw(16) << mean
+                << std::setw(16) << stdev << std::setw(16) << relative << std::endl;
+			}
+		}
+	}
 };
 
-#endif
+template <int LIMIT>
+std::atomic<size_t> Instrument<LIMIT>::instances(0);
+
+template <int LIMIT>
+uint64_t Instrument<LIMIT>::initialTime(0);
+
+template <int LIMIT>
+std::unordered_map<std::string, timevect> Instrument<LIMIT>::times;
+
+#endif // INSTRUMENTPP_ACTIVE

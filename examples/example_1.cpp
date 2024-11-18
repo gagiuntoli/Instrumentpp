@@ -2,7 +2,7 @@
  *  This source code is part of Instrument library.
  *
  *  Copyright (C) - 2024 - Guido Giuntoli <gagiuntoli@gmail.com>
- * 						   Jimmy Aguilar Mena <kratsbinovish@gmail.com>
+ *                         Jimmy Aguilar Mena <kratsbinovish@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,8 +32,10 @@ int func_1(void) {
 
   int j = 0;
   for (int k = 0; k < 100; ++k) {
-    for (int i = 0; i < N; ++i) j += i;
-    for (int i = 0; i < N; ++i) j -= i;
+    for (int i = 0; i < N; ++i)
+		j += i;
+    for (int i = 0; i < N; ++i)
+		j -= i;
   }
 
   return j;
@@ -43,8 +45,10 @@ int func_2(void) {
   INSTRUMENTPP_START
 
   int j = 0;
-  for (int i = 0; i < N; ++i) j += i;
-  for (int i = 0; i < N; ++i) j -= i;
+  for (int i = 0; i < N; ++i)
+	  j += i;
+  for (int i = 0; i < N; ++i)
+	  j -= i;
 
   func_3();
 
@@ -55,8 +59,11 @@ int func_3(void) {
   INSTRUMENTPP_START
 
   int j = 0;
-  for (int i = 0; i < N; ++i) j += i;
-  for (int i = 0; i < N; ++i) j -= i;
+  for (int i = 0; i < N; ++i)
+	  j += i;
+
+  for (int i = 0; i < N; ++i)
+	  j -= i;
 
   return j;
 }
@@ -76,4 +83,6 @@ int main(void) {
   }
 
   INSTRUMENTPP_DESTROY;
+
+  return 0;
 }

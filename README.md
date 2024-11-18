@@ -6,18 +6,7 @@ A C++ library to measure function performance in C++.
 
 If you have a CMake project, clone this code and put it in a folder like `lib/instrumentpp`
 
-then in your `CMakeLists.txt` add it like:
-
-```cmake
-add_library(lib/instrumentpp)
-```
-
-Link your code against it and activate the instrumentation:
-
-```cmake
-target_link_libraries(<your_target> PRIVATE instrumentpp)
-target_compile_definitions(<your_target> PRIVATE INSTRUMENTPP_ACTIVE)
-```
+then just include the header file where needed.
 
 In the `main` function of your code add the header and these 2 macros:
 
