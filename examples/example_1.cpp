@@ -82,7 +82,5 @@ int main(void) {
     func_2();
   }
 
-  INSTRUMENTPP_DESTROY;
-
   return 0;
 }

@@ -26,10 +26,9 @@
 
 #else // INSTRUMENTPP_ACTIVE
 
-#define INSTRUMENTPP_CONSTRUCT Instrument<>::initialize();
-#define INSTRUMENTPP_DESTROY Instrument<>::finalize();
-#define INSTRUMENTPP_START Instrument<> __timer__(__FUNCTION__);
-#define INSTRUMENTPP_CUSTOM(strname) Instrument<> __custom__(strname);
+#define INSTRUMENTPP_CONSTRUCT Instrument<> __global_intrumenter__;
+#define INSTRUMENTPP_START Instrument<>::InstrumentFunction __timer__(__FUNCTION__);
+#define INSTRUMENTPP_CUSTOM(strname) Instrument<>::InstrumentFunction __custom__(strname);
 
 #include <chrono>
 #include <cmath>
@@ -88,9 +87,6 @@ template <int LIMIT=1<<30>
 class Instrument {
 private:
 
-	const uint64_t start_time_;
-	const std::string funct_;
-
 	static std::atomic<size_t> instances;
 	static uint64_t initialTime;
 	static std::unordered_map<std::string, timevect> times;
@@ -100,21 +96,28 @@ private:
 	}
 
 public:
-	Instrument(const std::string funct)
-	: funct_(funct), start_time_(take_time_stamp())
-	{}
 
-	~Instrument() {
-		const uint64_t elapsed = (take_time_stamp() - start_time_) * 1E-3;
-		times[funct_].push_back(elapsed);
-	}
+	class InstrumentFunction {
+		const std::string funct_;
+		const uint64_t start_time_;
 
-	static void initialize() {
+	public:
+		InstrumentFunction(const std::string funct)
+		: funct_(funct), start_time_(take_time_stamp())
+		{}
+
+		~InstrumentFunction() {
+			const uint64_t elapsed = (take_time_stamp() - start_time_) * 1E-3;
+			Instrument::times[funct_].push_back(elapsed);
+		}
+	};
+
+	Instrument() {
 		if (!instances++)
 			initialTime = take_time_stamp();
 	}
 
-	static void finalize() {
+	~Instrument() {
 		if (--instances)
 			return;
 

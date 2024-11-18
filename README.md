@@ -17,8 +17,6 @@ int main(void) {
   INSTRUMENTPP_CONSTRUCT;
 
   // your program
-
-  INSTRUMENTPP_DESTROY;
 }
 ```
 
