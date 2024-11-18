@@ -20,7 +20,6 @@
 #ifndef INSTRUMENTPP_ACTIVE
 
 #define INSTRUMENTPP_CONSTRUCT
-#define INSTRUMENTPP_DESTROY
 #define INSTRUMENTPP_START
 #define INSTRUMENTPP_CUSTOM(strname)
 
@@ -35,15 +34,11 @@
 #include <numeric>
 #include <unordered_map>
 #include <vector>
-#include <stack>
 #include <string>
 #include <atomic>
 #include <iostream>
 #include <iomanip>
-
-namespace {
-	typedef std::vector<uint64_t> timevect;
-}
+#include <cassert>
 
 /*!
    This is a stats struct with basic statistics about the input vector.
@@ -82,12 +77,18 @@ struct stats {
 
 };
 
+/**
+   Main instrument class constructed globally in the main initialization.
 
+  The class is supposed to be created and destroyed only one time (like
+  a singleton) by the macro.
+*/
 template <int LIMIT=1<<30>
 class Instrument {
-private:
+	typedef std::vector<uint64_t> timevect;
 
-	static std::atomic<size_t> instances;
+private:
+	//! This is static to assert that this class behaves like a singleton.
 	static uint64_t initialTime;
 	static std::unordered_map<std::string, timevect> times;
 
@@ -97,14 +98,20 @@ private:
 
 public:
 
+	/** Inner class to instrument functions and scopes based on RAII */
 	class InstrumentFunction {
 		const std::string funct_;
 		const uint64_t start_time_;
 
 	public:
-		InstrumentFunction(const std::string funct)
+		InstrumentFunction(const std::string &funct)
 		: funct_(funct), start_time_(take_time_stamp())
-		{}
+		{
+			// Check that the global instrumenter was already
+			// initialized before this call.  Otherwise the destructor
+			// will fail, but detecting here is earlier.
+			assert(Instrument::initialTime > 0);
+		}
 
 		~InstrumentFunction() {
 			const uint64_t elapsed = (take_time_stamp() - start_time_) * 1E-3;
@@ -112,14 +119,13 @@ public:
 		}
 	};
 
-	Instrument() {
-		if (!instances++)
-			initialTime = take_time_stamp();
+	Instrument()
+	{
+		assert(initialTime == 0);
+		initialTime = take_time_stamp();
 	}
 
 	~Instrument() {
-		if (--instances)
-			return;
 
 		const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
 
@@ -160,12 +166,9 @@ public:
 };
 
 template <int LIMIT>
-std::atomic<size_t> Instrument<LIMIT>::instances(0);
-
-template <int LIMIT>
 uint64_t Instrument<LIMIT>::initialTime(0);
 
 template <int LIMIT>
-std::unordered_map<std::string, timevect> Instrument<LIMIT>::times;
+std::unordered_map<std::string, Instrument<>::timevect> Instrument<LIMIT>::times;
 
 #endif // INSTRUMENTPP_ACTIVE
