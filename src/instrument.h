@@ -1,7 +1,4 @@
 /*
- * This source code is part of MicroPP: a finite element library
- * to solve microstructural problems for composite materials.
- *
  * Copyright (C) - 2018 - Jimmy Aguilar Mena <kratsbinovish@gmail.com>
  *                        Guido Giuntoli <gagiuntoli@gmail.com>
  *
@@ -38,6 +35,7 @@
 
 #endif
 
+#include <cstdint>
 #include <chrono>
 #include <cmath>
 #include <numeric>
@@ -46,10 +44,35 @@
 #include <stack>
 #include <string>
 #include <atomic>
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 
 typedef std::vector<uint64_t> timevect;
+
+struct stats {
+  const size_t count;
+  const uint64_t total, min, max;
+  const double mean, stdev;
+
+  stats(const std::vector<uint64_t> &in)
+      : count(in.size()),
+        total(std::accumulate(in.begin(), in.end(), 0.0)),
+        min(*std::min_element(in.begin(), in.end())),
+        max(*std::max_element(in.begin(), in.end())),
+        mean((double)total / count),
+        stdev(devest(in, mean)) {}
+
+  static double devest(const std::vector<uint64_t> &in, const double mean) {
+    double out = 0;
+    for (const uint64_t &x : in) {
+      const double tmp = (double)x - mean;
+      out += tmp * tmp;
+    }
+
+    return std::sqrt(out / in.size());
+  }
+};
 
 class Instrument {
  private:
@@ -76,41 +99,43 @@ class Instrument {
     if (!instances++) initialTime = take_time_stamp();
   }
 
-  static uint64_t devest(const std::vector<uint64_t> &in, const uint64_t mean) {
-    uint64_t out = 0;
-    for (const auto &x : in) {
-      const uint64_t tmp = (x - mean);
-      out += tmp * tmp;
-    }
-
-    return std::sqrt(out / in.size());
-  }
-
   static void finalize() {
-    if (0 == --instances) {
-      const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
+    if (--instances) return;
 
-      size_t cont = 0;
-      std::cout << "# Final execution report: total time = " << elapsed << std::endl;
-      std::cout << std::setw(6) << std::left << "#No" << std::setw(25) << "function" << std::setw(8) << std::right
-                << "calls" << std::setw(16) << "total time" << std::setw(16) << "percent" << std::setw(16) << "mean"
-                << std::setw(16) << "stdev" << std::setw(16) << "relative" << std::endl;
+    const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
 
-      std::cout.precision(2);
-      std::cout << std::fixed;
+    std::cout << "# Final execution report: total time = " << elapsed << std::endl;
+    std::cout << std::setw(6) << std::left << "#"       //
+              << std::setw(25) << "function"            //
+              << std::setw(8) << std::right << "calls"  //
+              << std::setw(16) << "total time"          //
+              << std::setw(16) << "percent"             //
+              << std::setw(16) << "mean"                //
+              << std::setw(16) << "min"                 //
+              << std::setw(16) << "max"                 //
+              << std::setw(16) << "stdev"               //
+              << std::setw(16) << "relative"            //
+              << std::endl;
 
-      for (auto const &f : times) {
-        const uint64_t total = std::accumulate(f.second.begin(), f.second.end(), 0.0);
-        const size_t entries = f.second.size();
-        const uint64_t mean = total / entries;
-        const double percent = double(total) * 100 / elapsed;
-        const uint64_t stdev = Instrument::devest(f.second, mean);
-        const double relative = double(stdev) * 100 / mean;
+    std::cout.precision(2);
+    std::cout << std::fixed;
 
-        std::cout << std::setw(6) << std::left << cont++ << std::setw(25) << f.first << std::setw(8) << std::right
-                  << entries << std::setw(16) << total << std::setw(16) << percent << std::setw(16) << mean
-                  << std::setw(16) << stdev << std::setw(16) << relative << std::endl;
-      }
+    size_t cont = 0;
+
+    for (auto const &f : times) {
+      stats st(f.second);
+
+      std::cout << std::setw(6) << std::left << cont++         //
+                << std::setw(25) << f.first                    //
+                << std::setw(8) << std::right << st.count      //
+                << std::setw(16) << st.total                   //
+                << std::setw(16) << st.total * 100. / elapsed  //
+                << std::setw(16) << st.mean                    //
+                << std::setw(16) << st.min                     //
+                << std::setw(16) << st.max                     //
+                << std::setw(16) << st.stdev                   //
+                << std::setw(16) << st.stdev * 100 / st.mean   //
+                << std::endl;
     }
   }
 };
