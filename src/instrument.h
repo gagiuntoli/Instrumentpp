@@ -50,12 +50,12 @@
 
 typedef std::vector<uint64_t> timevect;
 
-struct stats {
+struct Stats {
   const size_t count;
   const uint64_t total, min, max;
   const double mean, stdev;
 
-  stats(const std::vector<uint64_t> &in)
+  Stats(const std::vector<uint64_t> &in)
       : count(in.size()),
         total(std::accumulate(in.begin(), in.end(), 0.0)),
         min(*std::min_element(in.begin(), in.end())),
@@ -69,7 +69,6 @@ struct stats {
       const double tmp = (double)x - mean;
       out += tmp * tmp;
     }
-
     return std::sqrt(out / in.size());
   }
 };
@@ -123,7 +122,7 @@ class Instrument {
     size_t cont = 0;
 
     for (auto const &f : times) {
-      stats st(f.second);
+      Stats st(f.second);
 
       std::cout << std::setw(6) << std::left << cont++         //
                 << std::setw(25) << f.first                    //
