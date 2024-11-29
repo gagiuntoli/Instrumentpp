@@ -21,6 +21,5 @@
 
 #include "instrument.h"
 
-std::atomic<size_t> Instrument::instances(0);
 uint64_t Instrument::initialTime(0);
 std::unordered_map<std::string, timevect> Instrument::times;

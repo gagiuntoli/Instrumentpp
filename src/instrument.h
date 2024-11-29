@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 typedef std::vector<uint64_t> timevect;
 
@@ -78,7 +79,6 @@ class Instrument {
   const uint64_t start_time_;
   const std::string funct_;
 
-  static std::atomic<size_t> instances;
   static uint64_t initialTime;
   static std::unordered_map<std::string, timevect> times;
 
@@ -95,12 +95,11 @@ class Instrument {
   }
 
   static void initialize() {
-    if (!instances++) initialTime = take_time_stamp();
+    assert(initialTime == 0);
+    initialTime = take_time_stamp();
   }
 
   static void finalize() {
-    if (--instances) return;
-
     const uint64_t elapsed = (take_time_stamp() - initialTime) * 1E-3;
 
     std::cout << "# Final execution report: total time = " << elapsed << std::endl;
